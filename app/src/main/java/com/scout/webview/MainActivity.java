@@ -27,23 +27,26 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
         Intent i = getIntent();
+        String debug = "";
         if (i != null) {
+            // Primary: S.token / S.url extras (intent://...#Intent;S.token=...;S.url=...;end) — avoids URL length limits
+            if (i.hasExtra("token")) token = i.getStringExtra("token");
+            if (i.hasExtra("url")) targetUrl = i.getStringExtra("url");
             Uri data = i.getData();
             if (data != null) {
                 String t = data.getQueryParameter("token");
                 String u = data.getQueryParameter("url");
-                if (t != null) token = t;
+                if (t != null && (token==null || token.isEmpty())) token = t;
                 if (u != null) targetUrl = u;
             }
-            if (i.hasExtra("token")) token = i.getStringExtra("token");
-            if (i.hasExtra("url")) targetUrl = i.getStringExtra("url");
-            // also accept scout://go?token=...&url=...
+            // dataString fallback: scout://go?token=... or intent://go?token=...
+            if ((token==null || token.isEmpty()) && i.getDataString() != null && i.getDataString().contains("token=")) {
+                try { token = Uri.parse(i.getDataString()).getQueryParameter("token"); } catch (Exception ignored) {}
+            }
+            debug = "intent=" + i.toString() + " data=" + i.getDataString();
         }
-        // Allow dashboard to pass token via intent: scout://go?token=xxx
-        // Fallback: if launched normally, try to load last token from intent data string
-        if (token == null && i.getDataString() != null && i.getDataString().contains("token=")) {
-            try { token = Uri.parse(i.getDataString()).getQueryParameter("token"); } catch (Exception ignored) {}
-        }
+        android.widget.Toast.makeText(this, token!=null ? "Token ok, loading Scout..." : "No token, loading Scout login", android.widget.Toast.LENGTH_SHORT).show();
+        android.util.Log.d("ScoutWebView", debug + " token=" + (token!=null ? token.substring(0,8)+"..." : "null"));
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
