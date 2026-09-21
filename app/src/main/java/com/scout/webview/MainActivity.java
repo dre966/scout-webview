@@ -48,23 +48,26 @@ public class MainActivity extends Activity {
         android.widget.Toast.makeText(this, token!=null ? "Token ok, loading Scout..." : "No token, loading Scout login", android.widget.Toast.LENGTH_SHORT).show();
         android.util.Log.d("ScoutWebView", debug + " token=" + (token!=null ? token.substring(0,8)+"..." : "null"));
 
+        final boolean[] injected = {false};
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                if (token != null && !token.isEmpty() && url.contains("scoutandrunner.com")) {
+                if (!injected[0] && token != null && !token.isEmpty() && url.contains("scoutandrunner.com")) {
+                    injected[0] = true;
                     String js = "(function(){try{"
-                        + "localStorage.setItem('cv-auth-storage', JSON.stringify({state:{token:'" + escapeJs(token) + "'}}));"
-                        + "localStorage.setItem('auth','" + escapeJs(token) + "');"
-                        + "sessionStorage.setItem('auth','" + escapeJs(token) + "');"
-                        + "console.log('Scout token injected for "+targetUrl+"');"
+                        + "var t='" + escapeJs(token) + "';"
+                        + "localStorage.setItem('cv-auth-storage', JSON.stringify({state:{token:t},version:0}));"
+                        + "localStorage.setItem('auth', t);"
+                        + "sessionStorage.setItem('auth', t);"
+                        + "console.log('Scout token injected, reloading');"
+                        + "setTimeout(function(){location.reload();}, 400);"
                         + "}catch(e){console.log(e)}})();";
                     view.evaluateJavascript(js, null);
-                    // only inject once
-                    token = null;
                 }
             }
         });
+        // Pre-inject via JS before load using evaluate on next page? Load first, then inject + reload as above
         webView.loadUrl(targetUrl);
     }
 
