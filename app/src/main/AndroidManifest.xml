@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.scout.webview">
     <uses-permission android:name="android.permission.INTERNET" />
-    <application android:allowBackup="true" android:label="Scout" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
+    <application android:allowBackup="true" android:label="Scout" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|keyboardHidden|screenSize">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
             <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="scout" android:host="go"/></intent-filter>
