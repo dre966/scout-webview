@@ -55,19 +55,24 @@ public class MainActivity extends Activity {
                 super.onPageFinished(view, url);
                 if (!injected[0] && token != null && !token.isEmpty() && url.contains("scoutandrunner.com")) {
                     injected[0] = true;
+                    // Fetch fresh user/roleData so cv-auth-storage matches real shape (from your dump) — then store and reload
                     String js = "(function(){try{"
                         + "var t='" + escapeJs(token) + "';"
-                        + "localStorage.setItem('cv-auth-storage', JSON.stringify({state:{token:t},version:0}));"
-                        + "localStorage.setItem('auth', t);"
-                        + "sessionStorage.setItem('auth', t);"
-                        + "console.log('Scout token injected, reloading');"
-                        + "setTimeout(function(){location.reload();}, 400);"
+                        + "function storeAndReload(user, roleData, session){"
+                        + " var state={user:user||null, roleData:roleData||null, session:session||null, config:{maxTestsPerCycle:8}, accessFlags:null, token:t, refreshToken:'', refreshTokenExpiresAt:null, isAuthenticated:true, accountMergeCountryConflict:false};"
+                        + " localStorage.setItem('cv-auth-storage', JSON.stringify({state:state,version:0}));"
+                        + " localStorage.setItem('auth', t); sessionStorage.setItem('auth', t);"
+                        + " console.log('Scout full state stored, reloading'); setTimeout(function(){location.href='https://scoutandrunner.com/scout';}, 300);"
+                        + "}"
+                        + "fetch('https://scoutandrunner.com/api/auth/me', {headers:{'Authorization':'Bearer '+t,'apikey':t,'Accept':'application/json'}})"
+                        + ".then(function(r){return r.ok?r.json():null;})"
+                        + ".then(function(j){ var u=(j&&j.user)||(j&&j.data&&j.data.user)||null; var rd=(j&&j.roleData)||null; var sess=(j&&j.session)||null; storeAndReload(u,rd,sess); })"
+                        + ".catch(function(e){ console.log('auth/me fail',e); storeAndReload(null,null,null); });"
                         + "}catch(e){console.log(e)}})();";
                     view.evaluateJavascript(js, null);
                 }
             }
         });
-        // Pre-inject via JS before load using evaluate on next page? Load first, then inject + reload as above
         webView.loadUrl(targetUrl);
     }
 
