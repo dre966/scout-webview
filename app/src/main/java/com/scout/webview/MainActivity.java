@@ -13,6 +13,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private String token;
     private String targetUrl = "https://scoutandrunner.com/scout";
+    private boolean[] injected = {false};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +49,6 @@ public class MainActivity extends Activity {
         android.widget.Toast.makeText(this, token!=null ? "Token ok, loading Scout..." : "No token, loading Scout login", android.widget.Toast.LENGTH_SHORT).show();
         android.util.Log.d("ScoutWebView", debug + " token=" + (token!=null ? token.substring(0,8)+"..." : "null"));
 
-        final boolean[] injected = {false};
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -78,6 +78,35 @@ public class MainActivity extends Activity {
 
     private String escapeJs(String s) {
         return s.replace("\\","\\\\").replace("'","\\'").replace("\n","\\n");
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String newToken = null;
+        String newUrl = targetUrl;
+        if (intent.hasExtra("token")) newToken = intent.getStringExtra("token");
+        if (intent.hasExtra("url")) newUrl = intent.getStringExtra("url");
+        Uri data = intent.getData();
+        if (data != null) {
+            String t = data.getQueryParameter("token");
+            String u = data.getQueryParameter("url");
+            if (t != null && (newToken==null || newToken.isEmpty())) newToken = t;
+            if (u != null) newUrl = u;
+        }
+        if ((newToken==null || newToken.isEmpty()) && intent.getDataString()!=null && intent.getDataString().contains("token=")) {
+            try { newToken = Uri.parse(intent.getDataString()).getQueryParameter("token"); } catch (Exception ignored) {}
+        }
+        if (newToken != null && !newToken.isEmpty()) {
+            token = newToken;
+            targetUrl = newUrl;
+            injected[0] = false;
+            // clear old storage so second bot doesn't see first bot's user
+            webView.evaluateJavascript("try{localStorage.clear(); sessionStorage.clear();}catch(e){}", null);
+            android.widget.Toast.makeText(this, "Switching bot...", android.widget.Toast.LENGTH_SHORT).show();
+            webView.loadUrl(targetUrl);
+        }
     }
 
     @Override
