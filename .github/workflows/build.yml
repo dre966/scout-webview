@@ -8,6 +8,9 @@ jobs:
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '17' }
       - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.7' }
+      - run: yes | sdkmanager --licenses || true
       - run: sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
       - run: gradle assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
